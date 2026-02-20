@@ -1,0 +1,138 @@
+{
+  "nod_attestation": {
+    "version": "0.1.0",
+    "contract_id": "4ff0f72885b128c0dd1bf0346d7d3cfce378a99cca94a88e8bff3879bad1de03",
+    "agent_id": "compliance-pipeline-v1.2.0",
+    "execution_id": "7f3a9c2e-1b4d-4f8a-9e2c-3d5f7a1b8c4e",
+    "timestamp_start": "2026-02-19T14:00:00Z",
+    "timestamp_end": "2026-02-19T14:23:41Z",
+    "model_id": "claude-sonnet-4-6",
+
+    "rule_attestations": [
+
+      {
+        "rule_id": "GOVERN-1.2-roles",
+        "label": "AI Roles",
+        "result": "satisfied",
+        "evidence": {
+          "artifact_type": "document",
+          "artifact_id": "raci-matrix-v3.pdf",
+          "artifact_hash": "03f574a38989d8479bb96e804332ef3e5a8a1bec55cc32cbbfbb984fd0e7faf5",
+          "artifact_location": "outputs/raci-matrix-v3.pdf",
+          "fields": {
+            "role_name": "AI Risk Owner",
+            "responsible_party": "Platform Security Team",
+            "lifecycle_phase": "deployment",
+            "last_reviewed": "2026-01-15"
+          },
+          "producer": "human",
+          "producer_identity": "Principal Compliance Program Manager"
+        }
+      },
+
+      {
+        "rule_id": "GOVERN-1.2-accountability",
+        "label": "Accountability Structure",
+        "result": "satisfied",
+        "evidence": {
+          "artifact_type": "document",
+          "artifact_id": "accountability-framework-v2.pdf",
+          "artifact_hash": "6ed083e4644592d3d6f87df2cc9bfbabb3813ed783ed17819f894b207cd535dd",
+          "artifact_location": "outputs/accountability-framework-v2.pdf",
+          "fields": {
+            "role_name": "AI Governance Lead",
+            "responsible_party": "Product Security Director",
+            "lifecycle_phase": "monitoring",
+            "last_reviewed": "2026-01-20"
+          },
+          "producer": "human",
+          "producer_identity": "Product Security Director"
+        }
+      },
+
+      {
+        "rule_id": "MAP-1.1-context",
+        "label": "System Context",
+        "result": "satisfied",
+        "evidence": {
+          "artifact_type": "document",
+          "artifact_id": "aims-context-section.pdf",
+          "artifact_hash": "fb6279f0f208abdcbabfbd42059507723103c7faf0a08b4ca058ca63a245f7d0",
+          "artifact_location": "outputs/aims-v1.2.pdf",
+          "fields": {
+            "system_name": "AI Content Review Platform",
+            "business_goal": "Automated review of user-generated content for policy violations",
+            "deployment_context": "Production SaaS — multi-tenant cloud",
+            "last_reviewed": "2026-02-01"
+          },
+          "producer": "hybrid",
+          "producer_identity": "compliance-build-pipeline"
+        }
+      },
+
+      {
+        "rule_id": "MAP-1.1-impact",
+        "label": "Impact Analysis",
+        "result": "satisfied",
+        "evidence": {
+          "artifact_type": "document",
+          "artifact_id": "impact-assessment-v2.pdf",
+          "artifact_hash": "0b90a7e8dafb952c2054da95968be87d234bd1260925c1ac970a018238f52c91",
+          "artifact_location": "outputs/impact-assessment-v2.pdf",
+          "fields": {
+            "impact_domain": "user privacy, content moderation accuracy",
+            "affected_stakeholders": "end users, content creators, trust and safety team",
+            "severity_rating": "HIGH",
+            "last_reviewed": "2026-02-01"
+          },
+          "producer": "human",
+          "producer_identity": "AI Risk Owner"
+        }
+      },
+
+      {
+        "rule_id": "MEASURE-2.2-bias",
+        "label": "Bias Metrics",
+        "result": "satisfied",
+        "evidence": {
+          "artifact_type": "test_result",
+          "artifact_id": "bias-eval-report-2026-q1.json",
+          "artifact_hash": "3db442410bd78885d63c4540f06ecd0a8adbb8212c655f60bc5973ac551cddfd",
+          "artifact_location": "outputs/bias-eval-report-2026-q1.json",
+          "fields": {
+            "metric_name": "Demographic Parity Difference",
+            "metric_value": "0.032",
+            "evaluation_date": "2026-01-28",
+            "evaluation_tool": "fairlearn-v0.10.0"
+          },
+          "producer": "pipeline",
+          "producer_identity": "bias-evaluation-pipeline-v2"
+        }
+      },
+
+      {
+        "rule_id": "MANAGE-2.3-incident",
+        "label": "Incident Response",
+        "result": "not_satisfied",
+        "notes": "An incident response plan specific to AI system failures does not yet exist. The organization has a general IT incident response plan but it does not address AI-specific scenarios including model degradation, bias drift, or adversarial input attacks. A remediation task has been opened in the issue tracker."
+      },
+
+      {
+        "rule_id": "MANAGE-1.3-decommission",
+        "label": "Decommissioning",
+        "result": "not_applicable",
+        "notes": "The system is in active production and is not scheduled for decommissioning. This requirement will be evaluated when a decommissioning timeline is established. Applicability will be reasserted at the next annual program review."
+      }
+
+    ],
+
+    "unsatisfied_rules": [
+      {
+        "rule_id": "MANAGE-2.3-incident",
+        "label": "Incident Response",
+        "reason": "No AI-specific incident response plan exists. General IT incident response plan does not address AI failure modes.",
+        "severity": "HIGH"
+      }
+    ]
+  }
+}
