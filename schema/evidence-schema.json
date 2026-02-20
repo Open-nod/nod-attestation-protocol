@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/opennod/nod-attestation-protocol/schema/evidence-schema.json",
+  "title": "nod Evidence Schema",
+  "description": "Defines the structure of an evidence schema block attached to a compliance rule definition. An evidence schema specifies what proof of satisfaction looks like for a rule — what artifact type is expected, what structured fields it must contain, who produces it, how frequently it must be refreshed, and how a validator or auditor can verify it. See SPEC.md Section 3 for full requirements.",
+  "type": "object",
+  "description": "An evidence schema is attached to a compliance rule under the 'evidence' key. It is optional on rules with severity MEDIUM or LOW and mandatory on rules with severity HIGH or CRITICAL in contract-complete rule sets.",
+  "required": ["required", "artifact_type", "description", "producer", "cadence"],
+  "additionalProperties": false,
+  "properties": {
+
+    "required": {
+      "type": "boolean",
+      "description": "Whether this evidence schema is required for the rule set to be considered contract-complete. Must be true for rules with severity HIGH or CRITICAL in any rule set declaring contract_complete: true. May be false for rules with severity MEDIUM or LOW. A rule set with HIGH or CRITICAL rules where required is false cannot claim contract completeness."
+    },
+
+    "artifact_type": {
+      "type": "string",
+      "description": "The category of evidence artifact expected to satisfy this rule. Attestation blocks referencing this rule must provide an evidence reference whose artifact_type matches this value. document: a written policy, procedure, or assessment. log: an audit log, access log, or activity record. attestation: a signed attestation from a human or system. test_result: output from an automated test or evaluation run. review_record: a record of human review, approval, or sign-off. configuration: a system configuration file or setting record. scan_result: output from a security or compliance scan. approval_record: a formal approval decision with a named approver. execution_trace: a structured record of agent execution steps.",
+      "enum": [
+        "document",
+        "log",
+        "attestation",
+        "test_result",
+        "review_record",
+        "configuration",
+        "scan_result",
+        "approval_record",
+        "execution_trace"
+      ]
+    },
+
+    "description": {
+      "type": "string",
+      "description": "Plain language statement of what the evidence must demonstrate. This is the human-readable contract statement for this rule — the standard an auditor or reviewer uses to evaluate whether the evidence is sufficient. Should be specific enough that two independent reviewers would reach the same conclusion about whether a given artifact satisfies it.",
+      "minLength": 10
+    },
+
+    "fields": {
+      "type": "array",
+      "description": "Optional. Structured fields the evidence artifact must contain. Each field definition specifies what information must be present in the evidence for it to be considered conformant. Attestation blocks provide field values in their evidence reference; validators check field presence and values against these definitions.",
+      "items": {
+        "$ref": "#/$defs/EvidenceField"
+      }
+    },
+
+    "producer": {
+      "type": "string",
+      "description": "Who or what is responsible for producing this evidence artifact. human: a person in a defined organizational role. agent: an AI agent or automated system. system: a platform or infrastructure system. pipeline: a CI/CD or automation pipeline. hybrid: a combination of human and automated production.",
+      "enum": ["human", "agent", "system", "pipeline", "hybrid"]
+    },
+
+    "producer_role": {
+      "type": "string",
+      "description": "Optional. Narrows the producer to a specific organizational role or system identifier when greater traceability is required. Used when producer is human to name the role responsible (e.g., 'AI Risk Owner', 'CISO', 'Product Security Team'). Used when producer is agent or system to name the specific system (e.g., 'security-scan-pipeline', 'compliance-bot-v2')."
+    },
+
+    "cadence": {
+      "type": "string",
+      "description": "How frequently this evidence must be refreshed to remain valid. once: produced one time at program initiation and not expected to change. per_release: refreshed with each product or system release. per_session: produced for each individual agent execution session. quarterly: refreshed every three months. annually: refreshed once per year. continuous: maintained as a live record updated in real time or near-real time. on_change: refreshed whenever the relevant system, policy, or process changes.",
+      "enum": [
+        "once",
+        "per_release",
+        "per_session",
+        "quarterly",
+        "annually",
+        "continuous",
+        "on_change"
+      ]
+    },
+
+    "retention": {
+      "type": "string",
+      "description": "Optional. How long evidence must be retained for audit purposes. Express as a human-readable duration string. Examples: '3 years', '90 days', '7 years', 'indefinite'. Retention requirements are informational for implementers — enforcement is the responsibility of the organization's records management program."
+    },
+
+    "verification": {
+      "$ref": "#/$defs/VerificationDefinition",
+      "description": "Optional. Defines how a validator or auditor confirms the evidence is valid. When absent, the default verification method is presence — the validator confirms the evidence artifact exists and its hash is present in the attestation block."
+    }
+
+  },
+
+  "$defs": {
+
+    "EvidenceField": {
+      "type": "object",
+      "description": "Definition of a structured field that must be present in the evidence artifact. Attestation blocks provide field values in their evidence reference under the fields key. Validators check that required fields are present and that values conform to any format or enumeration constraints.",
+      "required": ["name", "required", "description"],
+      "additionalProperties": false,
+      "properties": {
+
+        "name": {
+          "type": "string",
+          "description": "The field identifier. Used as the key in the evidence reference fields object in the attestation block. Should be snake_case for consistency with the rest of the schema.",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+
+        "required": {
+          "type": "boolean",
+          "description": "Whether this field must be present in the evidence reference for the attestation to be considered conformant. When true, validators reject attestation blocks where this field is absent or empty in the evidence reference."
+        },
+
+        "description": {
+          "type": "string",
+          "description": "Plain language explanation of what this field must contain. Should be specific enough for an emitter to know what value to provide and for a validator to know what to check.",
+          "minLength": 5
+        },
+
+        "format": {
+          "type": "string",
+          "description": "Optional. A format constraint on the field value. ISO8601: a valid ISO 8601 date or datetime string. email: a valid email address. uri: a valid URI. Any other value is treated as a regex pattern the field value must match.",
+          "examples": ["ISO8601", "email", "uri", "^[A-Z]{2,10}-\\d+$"]
+        },
+
+        "valid_values": {
+          "type": "array",
+          "description": "Optional. An enumeration of acceptable values for this field. When present, validators confirm the field value in the attestation block is one of these values. When absent, any non-empty string value is accepted subject to format constraints.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2
+        }
+
+      }
+    },
+
+    "VerificationDefinition": {
+      "type": "object",
+      "description": "Defines how a validator or auditor confirms that an evidence artifact satisfies this rule. Different verification methods place different requirements on the attestation block and the audit package.",
+      "required": ["method"],
+      "additionalProperties": false,
+      "properties": {
+
+        "method": {
+          "type": "string",
+          "description": "The verification approach for this evidence. presence: confirm the artifact exists and its hash is in the attestation block. This is the default when no verification block is specified. schema_match: confirm the evidence reference fields conform to the field definitions in this evidence schema. signature: confirm the artifact carries a valid cryptographic signature from the expected producer. cross_reference: confirm this evidence corroborates or satisfies a requirement defined by another rule. human_review: the evidence cannot be verified programmatically — a qualified human reviewer must assess it. Validators flag human_review rules for manual inspection rather than attempting programmatic verification.",
+          "enum": [
+            "presence",
+            "schema_match",
+            "signature",
+            "cross_reference",
+            "human_review"
+          ]
+        },
+
+        "cross_reference": {
+          "$ref": "#/$defs/CrossReference",
+          "description": "Required when method is cross_reference. Defines the relationship between this evidence and another rule's evidence requirement. Validators check that the referenced rule's evidence is also present and conformant in the attestation block."
+        }
+
+      },
+      "if": {
+        "properties": { "method": { "const": "cross_reference" } }
+      },
+      "then": {
+        "required": ["cross_reference"]
+      }
+    },
+
+    "CrossReference": {
+      "type": "object",
+      "description": "Defines a relationship between this rule's evidence requirement and another rule's evidence requirement. Used when evidence for one rule provides partial or complete coverage for another, or when two rules must be satisfied together to constitute conformance.",
+      "required": ["rule_id", "relationship"],
+      "additionalProperties": false,
+      "properties": {
+
+        "rule_id": {
+          "type": "string",
+          "description": "The rule identifier of the related rule whose evidence this cross-reference targets. Must match a rule_id present in the same rule set or a referenced rule set.",
+          "minLength": 1
+        },
+
+        "relationship": {
+          "type": "string",
+          "description": "The nature of the relationship between this rule's evidence and the referenced rule's evidence. corroborates: this evidence supports the referenced rule's evidence but does not satisfy it independently. satisfies: this evidence fully satisfies the referenced rule's evidence requirement — the referenced rule does not need separate evidence. supersedes: this evidence replaces the referenced rule's evidence requirement entirely. depends_on: this evidence is only valid when the referenced rule's evidence is also present and conformant.",
+          "enum": ["corroborates", "satisfies", "supersedes", "depends_on"]
+        }
+
+      }
+    }
+
+  }
+}
