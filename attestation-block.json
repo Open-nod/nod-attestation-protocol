@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/opennod/nod-attestation-protocol/schema/attestation-block.json",
+  "title": "nod Attestation Block",
+  "description": "A structured, signed record produced by a conformant emitter upon completion of a task governed by a nod compliance contract. Maps execution results to rule IDs, references evidence artifacts produced during execution, and carries an optional signature for tamper detection. See SPEC.md Section 5 for full requirements.",
+  "type": "object",
+  "required": ["nod_attestation"],
+  "additionalProperties": false,
+  "properties": {
+    "nod_attestation": {
+      "type": "object",
+      "description": "Root attestation object. All attestation content is nested under this key to enable embedding in larger documents without key collision.",
+      "required": [
+        "version",
+        "contract_id",
+        "agent_id",
+        "execution_id",
+        "timestamp_start",
+        "rule_attestations",
+        "unsatisfied_rules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+
+        "version": {
+          "type": "string",
+          "description": "The version of the nod Attestation Protocol this block conforms to. Must match the version of the governing contract. Validators use this field to determine compatibility before performing other checks.",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "examples": ["0.1.0", "1.0.0"]
+        },
+
+        "contract_id": {
+          "type": "string",
+          "description": "SHA-256 hash of the canonical serialization of the compliance contract that governed this execution. Validators confirm this matches the contract_id of the provided contract before accepting the attestation. This binding prevents an attestation from being applied to a different contract version.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+
+        "agent_id": {
+          "type": "string",
+          "description": "Identifier of the agent or pipeline that executed the governed task. This is a self-reported identifier. Implementations requiring strong agent identity assurance should combine this field with the attestation signature and external identity verification. Must be non-empty.",
+          "minLength": 1
+        },
+
+        "execution_id": {
+          "type": "string",
+          "description": "Unique identifier for this specific execution instance. Used by validators to detect replay attacks in automated pipelines. Emitters must generate a new execution_id for every distinct execution. UUIDs are recommended.",
+          "minLength": 1
+        },
+
+        "timestamp_start": {
+          "type": "string",
+          "description": "ISO 8601 timestamp indicating when execution began. Validators confirm this is before timestamp_end and after the exported_at timestamp of the governing contract.",
+          "format": "date-time"
+        },
+
+        "timestamp_end": {
+          "type": "string",
+          "description": "ISO 8601 timestamp indicating when execution completed. Optional — may be absent if the agent cannot determine a precise end time. When present, validators confirm it is after timestamp_start.",
+          "format": "date-time"
+        },
+
+        "model_id": {
+          "type": "string",
+          "description": "Optional. The model identifier or system version that performed the execution. Relevant when the agent is an LLM or model-backed system. Examples: 'claude-sonnet-4-6', 'gpt-4o', 'custom-pipeline-v2.1'."
+        },
+
+        "rule_attestations": {
+          "type": "array",
+          "description": "Per-rule execution results. Must include an entry for every rule with severity HIGH or CRITICAL in the governing contract. Rules with severity MEDIUM or LOW may be included at the emitter's discretion. An empty array is invalid for any contract containing HIGH or CRITICAL rules.",
+          "items": {
+            "$ref": "#/$defs/RuleAttestation"
+          }
+        },
+
+        "unsatisfied_rules": {
+          "type": "array",
+          "description": "Summary list of rules that were not satisfied during this execution. Every rule with a not_satisfied result in rule_attestations must have a corresponding entry here. Validators cross-check this list against rule_attestations for consistency. An empty array is valid when all rules were satisfied or not applicable.",
+          "items": {
+            "$ref": "#/$defs/UnsatisfiedRule"
+          }
+        },
+
+        "attestation_signature": {
+          "type": "string",
+          "description": "Optional. HMAC-SHA256 signature of the canonical JSON serialization of this attestation block, excluding this field, computed using a shared secret key. When present, validators verify this signature using the same key. When absent, validators emit a warning that the attestation is unsigned. Must not be present as a null or empty string — omit the field entirely if not signing.",
+          "minLength": 1
+        }
+
+      }
+    }
+  },
+
+  "$defs": {
+
+    "RuleAttestation": {
+      "type": "object",
+      "description": "The execution result for a single compliance rule from the governing contract. Includes the outcome, any evidence produced, and contextual notes when the rule was not satisfied or could not be verified.",
+      "required": ["rule_id", "label", "result"],
+      "additionalProperties": false,
+      "properties": {
+
+        "rule_id": {
+          "type": "string",
+          "description": "The rule identifier from the governing contract. Must exactly match a rule_id present in the contract_id-anchored contract. Validators reject attestations referencing rule IDs not present in the governing contract.",
+          "minLength": 1
+        },
+
+        "label": {
+          "type": "string",
+          "description": "Human-readable label for this rule, copied from the governing contract. Included for readability of the attestation block without requiring a contract lookup for each entry.",
+          "minLength": 1
+        },
+
+        "result": {
+          "type": "string",
+          "description": "The outcome of evaluating this rule during execution. satisfied: the rule was met and evidence was produced. not_satisfied: the rule was evaluated and could not be met — notes field required. not_applicable: the rule does not apply to this execution context — notes field required. unable_to_verify: the agent could not determine whether the rule was satisfied — notes field required. unable_to_verify must not be used as a substitute for not_satisfied when the agent knows the rule was not met.",
+          "enum": ["satisfied", "not_satisfied", "not_applicable", "unable_to_verify"]
+        },
+
+        "evidence": {
+          "$ref": "#/$defs/EvidenceReference",
+          "description": "Evidence artifact produced or referenced during execution. Required when result is satisfied and the governing rule carries an evidence schema. Optional when result is not_applicable. Must be absent when result is not_satisfied or unable_to_verify."
+        },
+
+        "notes": {
+          "type": "string",
+          "description": "Contextual explanation of the result. Required when result is not_satisfied, not_applicable, or unable_to_verify. Should provide enough detail for a human reviewer to understand why the rule was not satisfied or does not apply, and what remediation is needed.",
+          "minLength": 1
+        }
+
+      },
+      "if": {
+        "properties": { "result": { "const": "satisfied" } }
+      },
+      "then": {
+        "required": ["evidence"]
+      }
+    },
+
+    "EvidenceReference": {
+      "type": "object",
+      "description": "A reference to an evidence artifact produced or identified during execution. Provides enough information for a validator to confirm the artifact exists, matches the expected type, and contains the fields required by the governing rule's evidence schema.",
+      "required": ["artifact_type", "artifact_id", "artifact_hash", "artifact_location", "producer"],
+      "additionalProperties": false,
+      "properties": {
+
+        "artifact_type": {
+          "type": "string",
+          "description": "The category of evidence artifact. Must match the artifact_type defined in the governing rule's evidence schema when one is present. Validators reject evidence references where the type does not match the schema.",
+          "enum": [
+            "document",
+            "log",
+            "attestation",
+            "test_result",
+            "review_record",
+            "configuration",
+            "scan_result",
+            "approval_record",
+            "execution_trace"
+          ]
+        },
+
+        "artifact_id": {
+          "type": "string",
+          "description": "A unique reference to the evidence artifact within the context of this execution. May be a filename, a GRC tool ticket ID, a database record ID, or any other stable identifier. Used to correlate this reference with the actual artifact in the audit package.",
+          "minLength": 1
+        },
+
+        "artifact_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the evidence artifact content at the time of attestation. Enables validators and auditors to confirm the artifact has not been modified after the attestation was produced. Required for all satisfied rule attestations.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+
+        "artifact_location": {
+          "type": "string",
+          "description": "Path, URL, or GRC tool reference indicating where the evidence artifact can be retrieved. This location is informational — the artifact_hash is the authoritative integrity check, not the location.",
+          "minLength": 1
+        },
+
+        "fields": {
+          "type": "object",
+          "description": "Structured key-value pairs corresponding to the fields defined in the governing rule's evidence schema. When a rule's evidence schema defines required fields, each required field must appear here with a non-empty value. Validators check field presence and, where the schema defines valid_values, field values.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+
+        "producer": {
+          "type": "string",
+          "description": "Who or what produced this evidence artifact. Must match the producer type defined in the governing rule's evidence schema when one is present.",
+          "enum": ["human", "agent", "system", "pipeline", "hybrid"]
+        },
+
+        "producer_identity": {
+          "type": "string",
+          "description": "Optional. The specific role, team, system name, or pipeline identifier that produced the evidence. Provides traceability beyond the producer type category. Examples: 'AI Risk Owner', 'security-scan-pipeline-v3', 'Platform Security Team'."
+        }
+
+      }
+    },
+
+    "UnsatisfiedRule": {
+      "type": "object",
+      "description": "Summary entry for a rule that was not satisfied during execution. Every rule with a not_satisfied result in rule_attestations must have a corresponding entry here. Validators cross-check this list for consistency.",
+      "required": ["rule_id", "label", "reason", "severity"],
+      "additionalProperties": false,
+      "properties": {
+
+        "rule_id": {
+          "type": "string",
+          "description": "The rule identifier from the governing contract. Must match the rule_id of a rule_attestation with result not_satisfied.",
+          "minLength": 1
+        },
+
+        "label": {
+          "type": "string",
+          "description": "Human-readable label for this rule, copied from the governing contract.",
+          "minLength": 1
+        },
+
+        "reason": {
+          "type": "string",
+          "description": "Explanation of why this rule was not satisfied. Should be specific enough for a human reviewer to understand what would be required to satisfy the rule in a future execution.",
+          "minLength": 1
+        },
+
+        "severity": {
+          "type": "string",
+          "description": "The severity of the unsatisfied rule, copied from the governing contract. Validators use this to determine whether an unsatisfied rule constitutes a coverage failure.",
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+        }
+
+      }
+    }
+
+  }
+}
