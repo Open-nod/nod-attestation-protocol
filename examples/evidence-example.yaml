@@ -1,0 +1,265 @@
+# Example: Evidence Schema Extension on nod Rules
+# This file shows how evidence schemas are added to existing nod rule definitions
+# in a framework pack YAML file. Existing fields are unchanged — evidence blocks
+# are purely additive.
+#
+# This example extends the NIST AI RMF pack with evidence schemas on HIGH and
+# CRITICAL rules, making the profile contract-complete for attestation purposes.
+
+profiles:
+  nist_ai_rmf:
+    badge_label: "NIST AI RMF Aligned"
+    contract_complete: true
+    contract_version: "0.1.0"
+
+    requirements:
+
+      # ── GOVERN-1.2: Roles and Responsibilities ──────────────────────────────
+
+      - id: "#+.*Roles and Responsibilities"
+        label: "AI Roles"
+        rule_id: "GOVERN-1.2-roles"
+        control_id: "GOVERN-1.2"
+        severity: "HIGH"
+        remediation: "GOVERN 1.2: Define specific roles for the AI lifecycle."
+
+        # Evidence schema — mandatory for HIGH severity in contract-complete profiles
+        evidence:
+          required: true
+          artifact_type: "document"
+          description: >
+            A documented definition of roles across the AI lifecycle, naming specific
+            individuals or functions responsible for each phase. Must not be a generic
+            RACI that predates the AI system — must reflect the actual system's
+            governance structure.
+          fields:
+            - name: "role_name"
+              required: true
+              description: "The name or title of the defined role."
+            - name: "responsible_party"
+              required: true
+              description: "The individual, team, or function assigned to this role."
+            - name: "lifecycle_phase"
+              required: true
+              description: "The AI lifecycle phase this role governs."
+              valid_values:
+                - "design"
+                - "development"
+                - "evaluation"
+                - "deployment"
+                - "monitoring"
+                - "decommissioning"
+            - name: "last_reviewed"
+              required: true
+              description: "Date this role definition was last reviewed."
+              format: "ISO8601"
+          producer: "human"
+          producer_role: "AI Program Manager or Designated Risk Owner"
+          cadence: "annually"
+          retention: "3 years"
+          verification:
+            method: "schema_match"
+            cross_reference:
+              rule_id: "GOVERN-1.2-accountability"
+              relationship: "corroborates"
+
+      # ── MAP-1.1: Context and Goals ───────────────────────────────────────────
+
+      - id: "#+.*Context and Goals"
+        label: "System Context"
+        rule_id: "MAP-1.1-context"
+        control_id: "MAP-1.1"
+        severity: "HIGH"
+        remediation: "MAP 1.1: Document the context and business goals of the system."
+
+        evidence:
+          required: true
+          artifact_type: "document"
+          description: >
+            A documented description of the AI system's operational context, intended
+            use cases, and business objectives. Must be specific to this system —
+            not a generic product description. Must include the deployment environment
+            and the population of users or subjects affected.
+          fields:
+            - name: "system_name"
+              required: true
+              description: "The name of the AI system this context describes."
+            - name: "business_goal"
+              required: true
+              description: "The primary business objective this system serves."
+            - name: "deployment_context"
+              required: true
+              description: "Where and how the system is deployed (e.g., production SaaS, internal tool, embedded API)."
+            - name: "last_reviewed"
+              required: true
+              description: "Date this context document was last reviewed."
+              format: "ISO8601"
+          producer: "hybrid"
+          cadence: "on_change"
+          retention: "3 years"
+          verification:
+            method: "schema_match"
+
+      # ── MAP-1.1: Impact Assessment ───────────────────────────────────────────
+
+      - id: "#+.*Impact Assessment"
+        label: "Impact Analysis"
+        rule_id: "MAP-1.1-impact"
+        control_id: "MAP-1.1"
+        severity: "HIGH"
+        remediation: "MAP 1.1: Analyze potential negative impacts on stakeholders."
+
+        evidence:
+          required: true
+          artifact_type: "document"
+          description: >
+            A documented analysis of potential negative impacts on individuals, groups,
+            or society resulting from system failures, misuse, or unintended outputs.
+            Must identify specific affected stakeholder groups and rate impact severity.
+          fields:
+            - name: "impact_domain"
+              required: true
+              description: "The domain of potential negative impact (e.g., privacy, safety, fairness)."
+            - name: "affected_stakeholders"
+              required: true
+              description: "The specific groups or individuals who could be negatively affected."
+            - name: "severity_rating"
+              required: true
+              description: "The assessed severity of potential negative impact."
+              valid_values: ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+            - name: "last_reviewed"
+              required: true
+              description: "Date this impact assessment was last reviewed."
+              format: "ISO8601"
+          producer: "human"
+          producer_role: "AI Risk Owner"
+          cadence: "annually"
+          retention: "3 years"
+          verification:
+            method: "schema_match"
+
+      # ── MEASURE-2.2: Bias Metrics ────────────────────────────────────────────
+
+      - id: "#+.*Bias Metrics"
+        label: "Bias Metrics"
+        rule_id: "MEASURE-2.2-bias"
+        control_id: "MEASURE-2.2"
+        severity: "HIGH"
+        remediation: "MEASURE 2.2: Define specific metrics used to quantify bias."
+
+        evidence:
+          required: true
+          artifact_type: "test_result"
+          description: >
+            Results from a bias evaluation run against the deployed or candidate model,
+            using a defined metric. Results must include the metric name, the computed
+            value, the evaluation date, and the tool or method used. Must not be a
+            description of intended evaluation — must be actual evaluation output.
+          fields:
+            - name: "metric_name"
+              required: true
+              description: "The name of the bias metric computed (e.g., Demographic Parity Difference, Equal Opportunity Difference)."
+            - name: "metric_value"
+              required: true
+              description: "The computed metric value as a decimal string."
+            - name: "evaluation_date"
+              required: true
+              description: "The date the evaluation was run."
+              format: "ISO8601"
+            - name: "evaluation_tool"
+              required: true
+              description: "The tool or library used to compute the metric (e.g., fairlearn-v0.10.0)."
+          producer: "pipeline"
+          cadence: "per_release"
+          retention: "3 years"
+          verification:
+            method: "schema_match"
+
+      # ── MANAGE-2.3: Incident Response ────────────────────────────────────────
+
+      - id: "#+.*Incident Response Plan"
+        label: "Incident Response"
+        rule_id: "MANAGE-2.3-incident"
+        control_id: "MANAGE-2.3"
+        severity: "HIGH"
+        remediation: "MANAGE 2.3: Detail specific steps to respond to AI incidents."
+
+        evidence:
+          required: true
+          artifact_type: "document"
+          description: >
+            A documented incident response plan specific to AI system failures,
+            including model degradation, bias drift, adversarial inputs, and data
+            pipeline failures. Must name specific response roles and escalation paths.
+            A general IT incident response plan is not sufficient without an AI-specific
+            annex or section.
+          fields:
+            - name: "plan_version"
+              required: true
+              description: "The version identifier of the incident response plan."
+            - name: "ai_specific_scenarios"
+              required: true
+              description: "List of AI-specific incident scenarios the plan addresses."
+            - name: "response_owner"
+              required: true
+              description: "The role or team responsible for executing the plan."
+            - name: "last_reviewed"
+              required: true
+              description: "Date the plan was last reviewed and approved."
+              format: "ISO8601"
+          producer: "human"
+          producer_role: "AI Program Manager or Security Lead"
+          cadence: "annually"
+          retention: "3 years"
+          verification:
+            method: "human_review"
+
+      # ── MANAGE-1.3: Decommissioning ──────────────────────────────────────────
+      # LOW severity — evidence schema optional, included here as an example
+
+      - id: "#+.*Decommissioning Plan"
+        label: "Decommissioning"
+        rule_id: "MANAGE-1.3-decommission"
+        control_id: "MANAGE-1.3"
+        severity: "LOW"
+        remediation: "MANAGE 1.3: Plan for system decommissioning or model retirement."
+
+        evidence:
+          required: false
+          artifact_type: "document"
+          description: >
+            A documented plan for retiring the AI system or model, including data
+            deletion procedures, stakeholder notification, and transition handling.
+            Required when a decommissioning timeline is established.
+          fields:
+            - name: "target_date"
+              required: false
+              description: "The planned decommissioning date, if established."
+              format: "ISO8601"
+            - name: "data_disposition"
+              required: false
+              description: "How training data, model weights, and logs will be handled at decommission."
+          producer: "human"
+          cadence: "once"
+          retention: "5 years"
+          verification:
+            method: "presence"
+
+    red_flags:
+      - pattern: "black box"
+        label: "Black Box Arch"
+        control_id: "MEASURE-2.x"
+        severity: "MEDIUM"
+        remediation: "NIST RMF emphasizes Explainability. Avoid 'black box' architectures without interpretability layers."
+
+        # Red flag evidence schema — defines what clears this flag
+        evidence:
+          required: false
+          artifact_type: "document"
+          description: >
+            An interpretability layer definition or explainability report demonstrating
+            that the system's decision logic is auditable despite architectural opacity.
+          producer: "hybrid"
+          cadence: "per_release"
+          verification:
+            method: "human_review"

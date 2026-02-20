@@ -1,0 +1,289 @@
+{
+  "nod_contract": {
+    "version": "0.1.0",
+    "contract_id": "4ff0f72885b128c0dd1bf0346d7d3cfce378a99cca94a88e8bff3879bad1de03",
+    "exported_at": "2026-02-19T13:55:00Z",
+    "contract_complete": true,
+    "profiles": [
+      {
+        "profile_id": "nist_ai_rmf",
+        "badge_label": "NIST AI RMF Aligned",
+        "contract_complete": true,
+        "contract_version": "0.1.0",
+        "rules": [
+          {
+            "rule_id": "GOVERN-1.2-roles",
+            "label": "AI Roles",
+            "control_id": "GOVERN-1.2",
+            "severity": "HIGH",
+            "remediation": "GOVERN 1.2: Define specific roles for the AI lifecycle.",
+            "mode": "at_least_one",
+            "state": "active",
+            "evidence": {
+              "required": true,
+              "artifact_type": "document",
+              "description": "A documented definition of roles across the AI lifecycle, naming specific individuals or functions responsible for each phase. Must not be a generic RACI that predates the AI system — must reflect the actual system's governance structure.",
+              "fields": [
+                {
+                  "name": "role_name",
+                  "required": true,
+                  "description": "The name or title of the defined role."
+                },
+                {
+                  "name": "responsible_party",
+                  "required": true,
+                  "description": "The individual, team, or function assigned to this role."
+                },
+                {
+                  "name": "lifecycle_phase",
+                  "required": true,
+                  "description": "The AI lifecycle phase this role governs.",
+                  "valid_values": ["design", "development", "evaluation", "deployment", "monitoring", "decommissioning"]
+                },
+                {
+                  "name": "last_reviewed",
+                  "required": true,
+                  "description": "Date this role definition was last reviewed.",
+                  "format": "ISO8601"
+                }
+              ],
+              "producer": "human",
+              "producer_role": "AI Program Manager or Designated Risk Owner",
+              "cadence": "annually",
+              "retention": "3 years",
+              "verification": {
+                "method": "schema_match",
+                "cross_reference": {
+                  "rule_id": "GOVERN-1.2-accountability",
+                  "relationship": "corroborates"
+                }
+              }
+            }
+          },
+          {
+            "rule_id": "GOVERN-1.2-accountability",
+            "label": "Accountability Structure",
+            "control_id": "GOVERN-1.2",
+            "severity": "MEDIUM",
+            "remediation": "GOVERN 1.2: Define accountability chains for system outcomes.",
+            "mode": "at_least_one",
+            "state": "active"
+          },
+          {
+            "rule_id": "MAP-1.1-context",
+            "label": "System Context",
+            "control_id": "MAP-1.1",
+            "severity": "HIGH",
+            "remediation": "MAP 1.1: Document the context and business goals of the system.",
+            "mode": "at_least_one",
+            "state": "active",
+            "evidence": {
+              "required": true,
+              "artifact_type": "document",
+              "description": "A documented description of the AI system's operational context, intended use cases, and business objectives. Must be specific to this system. Must include the deployment environment and the population of users or subjects affected.",
+              "fields": [
+                {
+                  "name": "system_name",
+                  "required": true,
+                  "description": "The name of the AI system this context describes."
+                },
+                {
+                  "name": "business_goal",
+                  "required": true,
+                  "description": "The primary business objective this system serves."
+                },
+                {
+                  "name": "deployment_context",
+                  "required": true,
+                  "description": "Where and how the system is deployed."
+                },
+                {
+                  "name": "last_reviewed",
+                  "required": true,
+                  "description": "Date this context document was last reviewed.",
+                  "format": "ISO8601"
+                }
+              ],
+              "producer": "hybrid",
+              "cadence": "on_change",
+              "retention": "3 years",
+              "verification": {
+                "method": "schema_match"
+              }
+            }
+          },
+          {
+            "rule_id": "MAP-1.1-impact",
+            "label": "Impact Analysis",
+            "control_id": "MAP-1.1",
+            "severity": "HIGH",
+            "remediation": "MAP 1.1: Analyze potential negative impacts on stakeholders.",
+            "mode": "at_least_one",
+            "state": "active",
+            "evidence": {
+              "required": true,
+              "artifact_type": "document",
+              "description": "A documented analysis of potential negative impacts on individuals, groups, or society resulting from system failures, misuse, or unintended outputs. Must identify specific affected stakeholder groups and rate impact severity.",
+              "fields": [
+                {
+                  "name": "impact_domain",
+                  "required": true,
+                  "description": "The domain of potential negative impact."
+                },
+                {
+                  "name": "affected_stakeholders",
+                  "required": true,
+                  "description": "The specific groups or individuals who could be negatively affected."
+                },
+                {
+                  "name": "severity_rating",
+                  "required": true,
+                  "description": "The assessed severity of potential negative impact.",
+                  "valid_values": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+                },
+                {
+                  "name": "last_reviewed",
+                  "required": true,
+                  "description": "Date this impact assessment was last reviewed.",
+                  "format": "ISO8601"
+                }
+              ],
+              "producer": "human",
+              "producer_role": "AI Risk Owner",
+              "cadence": "annually",
+              "retention": "3 years",
+              "verification": {
+                "method": "schema_match"
+              }
+            }
+          },
+          {
+            "rule_id": "MEASURE-2.2-bias",
+            "label": "Bias Metrics",
+            "control_id": "MEASURE-2.2",
+            "severity": "HIGH",
+            "remediation": "MEASURE 2.2: Define specific metrics used to quantify bias.",
+            "mode": "at_least_one",
+            "state": "active",
+            "evidence": {
+              "required": true,
+              "artifact_type": "test_result",
+              "description": "Results from a bias evaluation run against the deployed or candidate model. Must include the metric name, computed value, evaluation date, and tool used. Must be actual evaluation output, not a description of intended evaluation.",
+              "fields": [
+                {
+                  "name": "metric_name",
+                  "required": true,
+                  "description": "The name of the bias metric computed."
+                },
+                {
+                  "name": "metric_value",
+                  "required": true,
+                  "description": "The computed metric value as a decimal string."
+                },
+                {
+                  "name": "evaluation_date",
+                  "required": true,
+                  "description": "The date the evaluation was run.",
+                  "format": "ISO8601"
+                },
+                {
+                  "name": "evaluation_tool",
+                  "required": true,
+                  "description": "The tool or library used to compute the metric."
+                }
+              ],
+              "producer": "pipeline",
+              "cadence": "per_release",
+              "retention": "3 years",
+              "verification": {
+                "method": "schema_match"
+              }
+            }
+          },
+          {
+            "rule_id": "MANAGE-2.3-incident",
+            "label": "Incident Response",
+            "control_id": "MANAGE-2.3",
+            "severity": "HIGH",
+            "remediation": "MANAGE 2.3: Detail specific steps to respond to AI incidents.",
+            "mode": "at_least_one",
+            "state": "active",
+            "evidence": {
+              "required": true,
+              "artifact_type": "document",
+              "description": "A documented incident response plan specific to AI system failures. A general IT incident response plan is not sufficient without an AI-specific annex.",
+              "fields": [
+                {
+                  "name": "plan_version",
+                  "required": true,
+                  "description": "The version identifier of the incident response plan."
+                },
+                {
+                  "name": "ai_specific_scenarios",
+                  "required": true,
+                  "description": "List of AI-specific incident scenarios the plan addresses."
+                },
+                {
+                  "name": "response_owner",
+                  "required": true,
+                  "description": "The role or team responsible for executing the plan."
+                },
+                {
+                  "name": "last_reviewed",
+                  "required": true,
+                  "description": "Date the plan was last reviewed and approved.",
+                  "format": "ISO8601"
+                }
+              ],
+              "producer": "human",
+              "producer_role": "AI Program Manager or Security Lead",
+              "cadence": "annually",
+              "retention": "3 years",
+              "verification": {
+                "method": "human_review"
+              }
+            }
+          },
+          {
+            "rule_id": "MANAGE-1.3-decommission",
+            "label": "Decommissioning",
+            "control_id": "MANAGE-1.3",
+            "severity": "LOW",
+            "remediation": "MANAGE 1.3: Plan for system decommissioning or model retirement.",
+            "mode": "at_least_one",
+            "state": "active",
+            "evidence": {
+              "required": false,
+              "artifact_type": "document",
+              "description": "A documented plan for retiring the AI system or model.",
+              "producer": "human",
+              "cadence": "once",
+              "retention": "5 years",
+              "verification": {
+                "method": "presence"
+              }
+            }
+          }
+        ],
+        "red_flags": [
+          {
+            "pattern": "black box",
+            "label": "Black Box Arch",
+            "control_id": "MEASURE-2.x",
+            "severity": "MEDIUM",
+            "remediation": "NIST RMF emphasizes Explainability. Avoid 'black box' architectures without interpretability layers."
+          },
+          {
+            "pattern": "no evaluation planned",
+            "label": "No Eval Planned",
+            "control_id": "MEASURE-1.1",
+            "severity": "CRITICAL",
+            "remediation": "Continuous validation is core to the NIST RMF Measure function."
+          }
+        ],
+        "reality_checks": [],
+        "attestation_required": false
+      }
+    ]
+  }
+}
